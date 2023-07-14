@@ -79,7 +79,7 @@
                                 string="Change Approver"
                                 class="oe_highlight"/>
 
-<!--                        <button name="create_purchase_order" type="object"-->
+<!--                        <button name="get_partner_names" type="object"-->
 <!--                                string="Test"-->
 <!--                                class="oe_highlight"/>-->
 

@@ -1,6 +1,5 @@
-# -*- coding: utf-8 -*-
-
 import datetime
+import hashlib
 import re
 import smtplib
 from email.mime.multipart import MIMEMultipart
@@ -39,30 +38,16 @@ class ChangePRApprovers(models.TransientModel):
     fourth_approver_name = fields.Char()
     final_approver_name = fields.Char()
 
+    approval_link = fields.Char('Approval link', store=True)
     current_approval_link = fields.Char('Approval link')
-    check_status = fields.Char(compute='compute_check_status', store=True)
-    approver_count = fields.Integer(compute='_compute_approver_count', store=True)
+
     date_today = fields.Char()
-
-    initial_approver_job_title = fields.Char(compute='get_approver_title', store=True)
-    second_approver_job_title = fields.Char(compute='get_approver_title', store=True)
-    third_approver_job_title = fields.Char(compute='get_approver_title', store=True)
-    fourth_approver_job_title = fields.Char(compute='get_approver_title', store=True)
-    final_approver_job_title = fields.Char(compute='get_approver_title', store=True)
-
-    initial_approver_email = fields.Char()
-    second_approver_email = fields.Char()
-    third_approver_email = fields.Char()
-    fourth_approver_email = fields.Char()
-    final_approver_email = fields.Char()
 
     initial_approval_date = fields.Char()
     second_approval_date = fields.Char()
     third_approval_date = fields.Char()
     fourth_approval_date = fields.Char()
     final_approval_date = fields.Char()
-
-    purchase_rep_email = fields.Char(related="user_id.login", store=True)
 
     @api.onchange('department_id')
     def get_approver_domain(self):
@@ -114,9 +99,6 @@ class ChangePRApprovers(models.TransientModel):
         self.pr_name = purchase_id.name
         self.pr_id = active_id
 
-        print(self.pr_id)
-        print(active_id)
-
         vals = {
             'approver_id': self.approver_id.id,
         }
@@ -127,56 +109,8 @@ class ChangePRApprovers(models.TransientModel):
             'approval_type': approval_type.id,
             'date': self.date
         })
-        self.current_approval_link = self.env['purchase.requisition'].browse(active_id).approval_link
-        self.submit_to_next_approver()
 
-    def submit_to_next_approver(self):
-        # Approval Dashboard Link Section
-        approval_base_url = self.env['ir.config_parameter'].sudo().get_param('web.base.url')
-        approval_action = self.env['ir.actions.act_window'].search(
-            [('name', '=', 'Purchase Request Approval Dashboard')], limit=1)
-        action_id = approval_action.id
-        odoo_params = {
-            "action": action_id,
-        }
-
-        query_string = '&'.join([f'{key}={value}' for key, value in odoo_params.items()])
-        approval_list_view_url = f"{approval_base_url}/web?debug=0#{query_string}"
-
-        # Generate Odoo Link Section
-        odoo_action = self.env['ir.actions.act_window'].search([('res_model', '=', 'purchase.requisition')], limit=1)
-        odoo_base_url = self.env['ir.config_parameter'].sudo().get_param('web.base.url')
-
-        odoo_result = re.sub(r'\((.*?)\)', '', str(odoo_action)).replace(',', '')
-        odoo_res = f"{odoo_result},{odoo_action.id}"
-        odoo_result = re.sub(r'\s*,\s*', ',', odoo_res)
-
-        odoo_menu = self.env['ir.ui.menu'].search([('action', '=', odoo_result)], limit=1)
-        odoo_params = {
-            "id": self.pr_id,
-            "action": odoo_action.id,
-            "model": "purchase.requisition",
-            "view_type": "form",
-            "cids": 1,
-            "menu_id": odoo_menu.id
-        }
-
-        odoo_query_params = "&".join(f"{key}={value}" for key, value in odoo_params.items())
-        pr_form_link = f"{odoo_base_url}/web#{odoo_query_params}"
-
-        self.generate_odoo_link()
-        self.approval_dashboard_link()
-
-        fetch_getEmailReceiver = self.approver_id.work_email  # self.approver_id.work_email DEFAULT RECEIVER CHANGE IT TO IF YOU WANT ----> IF YOU WANT TO SET AS DEFAULT OR ONLY ONE ##
-        self.sending_email_to_next_approver(fetch_getEmailReceiver, pr_form_link, approval_list_view_url)
-
-        self.write({
-            'approval_status': 'pr_approval',
-            'state': 'to_approve',
-            'to_approve': True,
-            'show_submit_request': False
-        })
-
+        self.submit_to_new_approver()
 
     # this retrieves the current date, formats it as day-month-year, and assigns the formatted date
     def getCurrentDate(self):
@@ -237,8 +171,21 @@ class ChangePRApprovers(models.TransientModel):
         pr_form_link = f"{base_url}/web#{query_params}"
         return pr_form_link
 
+    def generate_token(self):
+        active_id = self._context.get('active_id')
+        purchase_id = self.env['purchase.requisition'].browse(active_id)
+        self.pr_name = purchase_id.name
+        self.pr_id = active_id
+
+        now = datetime.datetime.now()
+        token = "{}-{}-{}-{}".format(self.pr_id, self.pr_name, self.env.user.id, now)
+
+        return hashlib.sha256(token.encode()).hexdigest()
+
+
+
     # Next Approver Sending of Email
-    def submit_to_next_approver(self):
+    def submit_to_new_approver(self):
         # Approval Dashboard Link Section
         approval_base_url = self.env['ir.config_parameter'].sudo().get_param('web.base.url')
         approval_action = self.env['ir.actions.act_window'].search(
@@ -274,7 +221,8 @@ class ChangePRApprovers(models.TransientModel):
         self.generate_odoo_link()
         self.approval_dashboard_link()
 
-        fetch_getEmailReceiver = self.approver_id.work_email  # self.approver_id.work_email DEFAULT RECEIVER CHANGE IT TO IF YOU WANT ----> IF YOU WANT TO SET AS DEFAULT OR ONLY ONE ##
+        fetch_getEmailReceiver = self.approver_id.work_email
+
         self.sending_email_to_next_approver(fetch_getEmailReceiver, pr_form_link, approval_list_view_url)
 
         self.write({
@@ -290,14 +238,19 @@ class ChangePRApprovers(models.TransientModel):
         port = 25
         username = "noreply@teamglac.com"
         password = "noreply"
+        
+        active_id = self._context.get('active_id')
+        purchase_id = self.env['purchase.requisition'].browse(active_id)
 
         base_url = self.env['ir.config_parameter'].sudo().get_param('web.base.url')
-        # token = self.generate_token()
+        token = self.generate_token()
 
-        approval_url = "{}/purchase_requisition/request/approve/{}".format(base_url, self.current_approval_link)
-        disapproval_url = "{}/purchase_requisition/request/disapprove/{}".format(base_url, self.current_approval_link)
+        approval_url = "{}/purchase_requisition/request/approve/{}".format(base_url, token)
+        disapproval_url = "{}/purchase_requisition/request/disapprove/{}".format(base_url, token)
 
-        self.write({'approval_link': self.current_approval_link})
+        self._cr.execute("""
+            UPDATE purchase_requisition SET approval_link = %s WHERE id = %s
+        """, (token, active_id))
 
         msg = MIMEMultipart()
         msg['From'] = formataddr(('Odoo Mailer', sender))
@@ -325,8 +278,7 @@ class ChangePRApprovers(models.TransientModel):
                     </style>
                 </head>
                 <body>"""
-        active_id = self._context.get('active_id')
-        purchase_id = self.env['purchase.requisition'].browse(active_id)
+
 
         html_content += f"""
            <dt><b>{self.pr_name}</b></dt>
@@ -337,7 +289,7 @@ class ChangePRApprovers(models.TransientModel):
                    <dd>Currency: &nbsp;&nbsp;{purchase_id.currency_id.name if purchase_id.currency_id.name != False else ""}</dd>
                    <dd>Source Document: &nbsp;&nbsp;{purchase_id.origin if purchase_id.origin != False else ""}</dd>
                <br></br>
-                   <span><b>ITEMS REQUESTED</b></span>
+                     <span><b>ITEMS REQUESTED</b></span>
                <br></br>
            """
 
@@ -403,43 +355,6 @@ class ChangePRApprovers(models.TransientModel):
                     'title': 'Error: Unable to send email!',
                     'message': f'{msg}'}
             }
-
-    def action_in_progress(self):
-        self.ensure_one()
-        if not all(obj.line_ids for obj in self):
-            raise UserError(_("You cannot confirm agreement {} because there is no product line.").format(self.name))
-        if self.type_id.quantity_copy == 'none' and self.vendor_id:
-            for requisition_line in self.line_ids:
-                if requisition_line.price_unit <= 0.0:
-                    raise UserError(_('You cannot confirm the blanket order without price.'))
-                if requisition_line.product_qty <= 0.0:
-                    raise UserError(_('You cannot confirm the blanket order without quantity.'))
-                requisition_line.create_supplier_info()
-            self.write({'state': 'to_approve'})
-        else:
-            self.write({'state': 'to_approve'})
-        # Set the sequence number regarding the requisition type
-        if self.name == 'New':
-            if self.is_quantity_copy != 'none':
-                self.name = self.env['ir.sequence'].next_by_code('purchase.requisition.purchase.tender')
-            else:
-                self.name = self.env['ir.sequence'].next_by_code('purchase.requisition.blanket.order')
-
-        self.write({
-            'show_submit_request': True
-        })
-
-    def compute_approver(self):
-        for rec in self:
-            if self.env.user.name == rec.approver_id.name:
-                self.update({
-                    'is_approver': True,
-                })
-            else:
-                self.update({
-                    'is_approver': False,
-                })
-
     @api.depends('approval_stage')
     def pr_approve_request(self):
         for rec in self:

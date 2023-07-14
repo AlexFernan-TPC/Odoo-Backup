@@ -218,30 +218,59 @@ class PurchaseOrder(models.Model):
                 if rec.location_dest_id.name == "Accept" and rec.state == 'done':
                     purchase.new_picking_id = rec
 
-    @api.model
-    def create(self, vals):
 
-        partner = self.env['res.partner'].search([('id', '=', vals['partner_id'])])
-        company_id = vals.get('company_id', self.default_get(['company_id'])['company_id'])
-        if vals.get('name', 'New') == 'New':
-            seq_date = None
-            if 'date_order' in vals:
-                seq_date = fields.Datetime.context_timestamp(self, fields.Datetime.to_datetime(vals['date_order']))
-            if partner.local:
-                vals['name'] = self.env['ir.sequence'].with_context(force_company=company_id).next_by_code(
-                    'purchase.order.local',
-                    sequence_date=seq_date) or '/'
-            elif partner.indent:
-                vals['name'] = self.env['ir.sequence'].with_context(force_company=company_id).next_by_code(
-                    'purchase.order.indent',
-                    sequence_date=seq_date) or '/'
-            else:
-                vals['name'] = self.env['ir.sequence'].with_context(force_company=company_id).next_by_code(
-                    'purchase.order',
-                    sequence_date=seq_date) or '/'
+    # @api.model
+    # def create(self, vals):
+    #
+    #     partner = self.env['res.partner'].search([('id', '=', vals['partner_id'])])
+    #     company_id = vals.get('company_id', self.default_get(['company_id'])['company_id'])
+    #     if vals.get('name', 'New') == 'New':
+    #         seq_date = None
+    #         if 'date_order' in vals:
+    #             seq_date = fields.Datetime.context_timestamp(self, fields.Datetime.to_datetime(vals['date_order']))
+    #         if partner.local:
+    #             vals['name'] = self.env['ir.sequence'].with_context(force_company=company_id).next_by_code(
+    #                 'purchase.order.local',
+    #                 sequence_date=seq_date) or '/'
+    #         elif partner.indent:
+    #             vals['name'] = self.env['ir.sequence'].with_context(force_company=company_id).next_by_code(
+    #                 'purchase.order.indent',
+    #                 sequence_date=seq_date) or '/'
+    #         else:
+    #             vals['name'] = self.env['ir.sequence'].with_context(force_company=company_id).next_by_code(
+    #                 'purchase.order',
+    #                 sequence_date=seq_date) or '/'
+    #
+    #     return super(PurchaseOrder, self.with_context(company_id=company_id)).create(vals)
 
-        return super(PurchaseOrder, self.with_context(company_id=company_id)).create(vals)
+@api.model
+def create(self, vals):
+    # if 'partner_id' not in vals:
+    #     # Handle the case when 'partner_id' is missing
+    #     # You can raise an error, provide a default value, or handle it in an appropriate way
+    #     # For example, you can raise an error like this:
+    #     raise ValueError("Missing 'partner_id' in purchase order creation.")
 
+    partner = self.env['res.partner'].search([('id', '=', vals['partner_id'])])
+    company_id = vals.get('company_id', self.default_get(['company_id'])['company_id'])
+    if vals.get('name', 'New') == 'New':
+        seq_date = None
+        if 'date_order' in vals:
+            seq_date = fields.Datetime.context_timestamp(self, fields.Datetime.to_datetime(vals['date_order']))
+        if partner.local:
+            vals['name'] = self.env['ir.sequence'].with_context(force_company=company_id).next_by_code(
+                'purchase.order.local',
+                sequence_date=seq_date) or '/'
+        elif partner.indent:
+            vals['name'] = self.env['ir.sequence'].with_context(force_company=company_id).next_by_code(
+                'purchase.order.indent',
+                sequence_date=seq_date) or '/'
+        else:
+            vals['name'] = self.env['ir.sequence'].with_context(force_company=company_id).next_by_code(
+                'purchase.order',
+                sequence_date=seq_date) or '/'
+
+    return super(PurchaseOrder, self.with_context(company_id=company_id)).create(vals)
 
 class PurchaseOrderLine(models.Model):
     _inherit = 'purchase.order.line'
@@ -250,7 +279,6 @@ class PurchaseOrderLine(models.Model):
     initial_quantity_reversed = fields.Float()
     partial_subtotal = fields.Float()
     new_move_ids = fields.One2many('stock.move', 'purchase_line_id_new', readonly=True, ondelete='set null', copy=False)
-
 
 
 

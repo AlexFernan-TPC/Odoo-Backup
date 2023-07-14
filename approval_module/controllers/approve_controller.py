@@ -13,8 +13,11 @@ class RequestApprovalController(http.Controller):
             request_form.pr_approve_request()
             msg = "Request approved successfully!"
             return f"""<script>alert("{msg}");window.close();</script>"""
+
         else:
             return INVALID_LINK
+
+
 
     @http.route('/purchase_requisition/request/disapprove/<string:token>', type='http', auth='public', website=True,
                 csrf=False,
