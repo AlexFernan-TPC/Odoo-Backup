@@ -100,17 +100,13 @@ class ChangeApproversWiz(models.TransientModel):
             'approver_id': self.approver_id.id,
 
         }
-
         purchase_id.write(vals)
-
-
         history = self.env['change.approver.rsn'].create({
             'name': self.reason.name,
             'approval_type': approval_type.id,
             'date': self.date
         })
 
-        self.current_approval_link = self.env['purchase.order'].browse(active_id).approval_link
         self.submit_to_next_approver()
 
     def approval_dashboard_link(self):
@@ -200,12 +196,19 @@ class ChangeApproversWiz(models.TransientModel):
         username = "noreply@teamglac.com"
         password = "noreply"
 
+        active_id = self._context.get('active_id')
+        purchase_id = self.env['purchase.order'].browse(active_id)
+
         base_url = self.env['ir.config_parameter'].sudo().get_param('web.base.url')
 
-        approval_url = "{}/purchase_order/request/approve/{}".format(base_url, self.current_approval_link)
-        disapproval_url = "{}/purchase_order/request/disapprove/{}".format(base_url, self.current_approval_link)
+        token = self.generate_token()
 
-        self.write({'approval_link': self.current_approval_link})
+        approval_url = "{}/purchase_order/request/approve/{}".format(base_url, token)
+        disapproval_url = "{}/purchase_order/request/disapprove/{}".format(base_url, token)
+
+        self._cr.execute("""
+                   UPDATE purchase_order SET approval_link = %s WHERE id = %s
+               """, (token, active_id))
 
         msg = MIMEMultipart()
         msg['From'] = formataddr(('Odoo Mailer', sender))
@@ -234,8 +237,7 @@ class ChangeApproversWiz(models.TransientModel):
                 </style>
             </head>
             <body>"""
-        active_id = self._context.get('active_id')
-        purchase_id = self.env['purchase.order'].browse(active_id)
+
 
         html_content += f"""
         <dt><b>{self.po_name}</b></dt>
