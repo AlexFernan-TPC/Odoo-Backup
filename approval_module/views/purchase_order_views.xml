@@ -79,9 +79,9 @@
                                 string="Change Approver"
                                 class="oe_highlight"/>
 
-<!--                        <button name="get_partner_names" type="object"-->
-<!--                                string="Test"-->
-<!--                                class="oe_highlight"/>-->
+                        <button name="get_partner_names" type="object"
+                                string="Test"
+                                class="oe_highlight"/>
 
                         <button name="po_approve_request" type="object"
                                 string="Approve Request"

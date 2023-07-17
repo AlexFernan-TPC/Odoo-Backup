@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import datetime
-import hashlib
 import re
 import smtplib
 from email.mime.multipart import MIMEMultipart
@@ -11,26 +10,42 @@ from odoo import api, fields, models, _
 from odoo.exceptions import UserError
 
 
-
 class ChangeApproversWiz(models.TransientModel):
     _name = 'change.approvers.wiz'
-    # _inherit = 'purchase.order'
+    _inherit = 'purchase.order'
 
     approver_id = fields.Many2one('hr.employee', string="Approver", domain=lambda self: self.get_approver_domain())
     department_id = fields.Many2one('account.analytic.account', string="Department", store=True)
     reason = fields.Many2one('change.approver.rsn', string="Reason for Change")
     date = fields.Date(string="Date of Change",
                        default=lambda self: self._context.get('date', fields.Date.context_today(self)))
-    # state = fields.Selection(
-    #     selection_add=[('to_approve', 'To Approve'), ('disapprove', 'Disapproved'), ('approved', 'Approved')])
-    # approval_status = fields.Selection(selection=[
-    #     ('po_approval', 'For Approval'),
-    #     ('approved', 'Approved'),
-    #     ('disapprove', 'Disapproved'),
-    #     ('cancel', 'Cancelled')
-    # ], string='Status')
+    state = fields.Selection(
+        selection_add=[('to_approve', 'To Approve'), ('disapprove', 'Disapproved'), ('approved', 'Approved')])
+    approval_status = fields.Selection(selection=[
+        ('po_approval', 'For Approval'),
+        ('approved', 'Approved'),
+        ('disapprove', 'Disapproved'),
+        ('cancel', 'Cancelled')
+    ], string='Status')
 
     po_id = fields.Char()
+    # New fields
+    initial_approver_name = fields.Char()
+    second_approver_name = fields.Char()
+    third_approver_name = fields.Char()
+    fourth_approver_name = fields.Char()
+    final_approver_name = fields.Char()
+
+    current_approval_link = fields.Char('Approval link')
+    check_status = fields.Char(compute='compute_check_status', store=True)
+    approver_count = fields.Integer(compute='_compute_approver_count', store=True)
+    date_today = fields.Char()
+
+    initial_approval_date = fields.Char()
+    second_approval_date = fields.Char()
+    third_approval_date = fields.Char()
+    fourth_approval_date = fields.Char()
+    final_approval_date = fields.Char()
 
     @api.onchange('department_id')
     def get_approver_domain(self):
@@ -38,12 +53,12 @@ class ChangeApproversWiz(models.TransientModel):
         purchase_id = self.env['purchase.order'].browse(active_id)
         for rec in purchase_id:
             domain = []
-            if rec.state in ('draft', 'sent', 'to_approve'):
-                res = self.env["department.approvers"].search(
-                    [("dept_name", "=", rec.department_id.id), ("approval_type.name", '=', 'Purchase Orders')])
-            else:
+            if rec.state in ('draft', 'sent', 'to approve'):
                 res = self.env["department.approvers"].search(
                     [("dept_name", "=", rec.department_id.id), ("approval_type.name", '=', 'Purchase Requests')])
+            else:
+                res = self.env["department.approvers"].search(
+                    [("dept_name", "=", rec.department_id.id), ("approval_type.name", '=', 'Purchase Orders')])
 
             if rec.department_id and rec.approval_stage == 1:
                 approver_dept = [x.first_approver.id for x in res.set_first_approvers]
@@ -79,34 +94,20 @@ class ChangeApproversWiz(models.TransientModel):
         active_id = self._context.get('active_id')
         purchase_id = self.env['purchase.order'].browse(active_id)
         approval_type = self.env["purchase.approval.types"].search([("name", '=', 'Purchase Orders')])
-
         self.po_name = purchase_id.name
         self.po_id = active_id
-
         vals = {
             'approver_id': self.approver_id.id,
+
         }
-
         purchase_id.write(vals)
-
         history = self.env['change.approver.rsn'].create({
             'name': self.reason.name,
             'approval_type': approval_type.id,
             'date': self.date
         })
-        self.submit_to_new_approver()
 
-
-    def generate_token(self):
-        active_id = self._context.get('active_id')
-        purchase_id = self.env['purchase.order'].browse(active_id)
-        self.po_name = purchase_id.name
-        self.po_id = active_id
-
-        now = datetime.datetime.now()
-        token = "{}-{}-{}-{}".format(self.po_id, self.po_name, self.env.user.id, now)
-        return hashlib.sha256(token.encode()).hexdigest()
-
+        self.submit_to_next_approver()
 
     def approval_dashboard_link(self):
         # Approval Dashboard Link Section
@@ -131,7 +132,6 @@ class ChangeApproversWiz(models.TransientModel):
         result = re.sub(r'\s*,\s*', ',', res)
 
         menu = self.env['ir.ui.menu'].search([('action', '=', result)], limit=1)
-
         params = {
             "id": self.po_id,
             "action": action.id,
@@ -140,13 +140,10 @@ class ChangeApproversWiz(models.TransientModel):
             "cids": 1,
             "menu_id": menu.id
         }
-
         query_params = "&".join(f"{key}={value}" for key, value in params.items())
         po_form_link = f"{base_url}/web#{query_params}"
-
-
         return po_form_link
-    def submit_to_new_approver(self):
+    def submit_to_next_approver(self):
         # Approval Dashboard Link Section
         approval_base_url = self.env['ir.config_parameter'].sudo().get_param('web.base.url')
         approval_action = self.env['ir.actions.act_window'].search([('name', '=', 'Purchase Order Approval Dashboard')], limit=1)
@@ -184,12 +181,13 @@ class ChangeApproversWiz(models.TransientModel):
         fetch_getEmailReceiver = self.approver_id.work_email  # self.approver_id.work_email DEFAULT RECEIVER CHANGE IT TO IF YOU WANT ----> IF YOU WANT TO SET AS DEFAULT OR ONLY ONE ##
         self.sending_email_to_next_approver(fetch_getEmailReceiver, po_form_link, approval_list_view_url)
 
-        # self.write({
-        #     'approval_status': 'po_approval',
-        #     'state': 'to_approve',
-        #     'to_approve': True,
-        #     'show_submit_request': False
-        # })
+        self.write({
+            'approval_status': 'po_approval',
+            'state': 'to_approve',
+            'to_approve': True,
+            'show_submit_request': False
+        })
+
 
     def sending_email_to_next_approver(self, fetch_getEmailReceiver, po_form_link, approval_list_view_url):
         sender = 'noreply@teamglac.com'
@@ -240,64 +238,64 @@ class ChangeApproversWiz(models.TransientModel):
             </head>
             <body>"""
 
-        html_content += f"""
-            <dt><b>{self.po_name}</b></dt>
-                <br></br>
-                    <dd>Purchase Representative: &nbsp;&nbsp;{purchase_id.user_id.name if purchase_id.user_id.name != False else ""}</dd>
-                    <dd>Confirmation Date: &nbsp;&nbsp;{purchase_id.date_approve if purchase_id.date_approve != False else ""}</dd>
-                    <dd>Vendor: &nbsp;&nbsp;{purchase_id.partner_id.name if purchase_id.partner_id.name != False else ""}</dd>
-                    <dd>Currency: &nbsp;&nbsp;{purchase_id.currency_id.name if purchase_id.currency_id.name != False else ""}</dd>
-                    <dd>Source Document: &nbsp;&nbsp;{purchase_id.origin if purchase_id.origin != False else ""}</dd>
-                <br></br>
-                    <span><b>ITEMS REQUESTED</b></span>
-                <br></br>
-            """
 
-        html_content += """
+        html_content += f"""
+        <dt><b>{self.po_name}</b></dt>
             <br></br>
-            <table>
-                        <tr>
-                            <th>Product</th>
-                            <th>Description</th>
-                            <th>Scheduled Date</th>
-                            <th>Analytic Account</th>
-                            <th>Quantity</th>
-                            <th>Received</th>
-                            <th>UoM</th>
-                            <th>Unit Price</th>
-                            <th>Taxes</th>
-                            <th>Subtotal</th>
-                        </tr>
-                        """
+                <dd>Purchase Representative: &nbsp;&nbsp;{purchase_id.user_id.name if purchase_id.user_id.name != False else ""}</dd>
+                <dd>Confirmation Date: &nbsp;&nbsp;{purchase_id.date_approve if purchase_id.date_approve != False else ""}</dd>
+                <dd>Vendor: &nbsp;&nbsp;{purchase_id.partner_id.name if purchase_id.partner_id.name != False else ""}</dd>
+                <dd>Currency: &nbsp;&nbsp;{purchase_id.currency_id.name if purchase_id.currency_id.name != False else ""}</dd>
+                <dd>Source Document: &nbsp;&nbsp;{purchase_id.origin if purchase_id.origin != False else ""}</dd>
+            <br></br>
+                <span><b>ITEMS REQUESTED</b></span>
+            <br></br>
+        """
+        html_content += """
+        <br></br>
+        <table>
+                    <tr>
+                        <th>Product</th>
+                        <th>Description</th>
+                        <th>Scheduled Date</th>
+                        <th>Analytic Account</th>
+                        <th>Quantity</th>
+                        <th>Received</th>
+                        <th>UoM</th>
+                        <th>Unit Price</th>
+                        <th>Taxes</th>
+                        <th>Subtotal</th>
+                    </tr>
+                    """
 
         for line in purchase_id.order_line:
             html_content += f"""
-                        <tr>
-                            <td>{line.product_id.name if line.product_id.name != False else ""}</td>
-                            <td>{line.name if line.name != False else ""}</td>
-                            <td>{line.date_planned if line.date_planned != False else ""}</td>
-                            <td>{line.account_analytic_id.name if line.account_analytic_id.name != False else ""}</td>
-                            <td>{line.product_qty if line.product_qty != False else ""}</td>
-                            <td>{line.qty_received if line.qty_received != False else ""}</td>
-                            <td>{line.product_uom.name if line.product_uom.name != False else ""}</td>
-                            <td>{'{:,.2f}'.format(line.price_unit) if line.price_unit != False else ""}</td>
-                            <td>{line.taxes_id.name if line.taxes_id.name != False else ""}</td>
-                            <td>{'{:,.2f}'.format(line.price_subtotal)}&nbsp;{line.currency_id.name if line.currency_id.name != False else ""}</td>
-                        </tr>
-            """
+                    <tr>
+                        <td>{line.product_id.name if line.product_id.name != False else ""}</td>
+                        <td>{line.name if line.name != False else ""}</td>
+                        <td>{line.date_planned if line.date_planned != False else ""}</td>
+                        <td>{line.account_analytic_id.name if line.account_analytic_id.name != False else ""}</td>
+                        <td>{line.product_qty if line.product_qty != False else ""}</td>
+                        <td>{line.qty_received if line.qty_received != False else ""}</td>
+                        <td>{line.product_uom.name if line.product_uom.name != False else ""}</td>
+                        <td>{'{:,.2f}'.format(line.price_unit) if line.price_unit != False else ""}</td>
+                        <td>{line.taxes_id.name if line.taxes_id.name != False else ""}</td>
+                        <td>{'{:,.2f}'.format(line.price_subtotal)}&nbsp;{self.currency_id.name if self.currency_id.name != False else ""}</td>
+                    </tr>
+        """
 
         html_content += f"""
-                </table>
+            </table>
 
-                </body>
-                <br></br>
-                <br></br>
-                <br></br>
-                <span style="font-style: italic;";><a href="{approval_url}"  style="color: green;">APPROVE</a> / <a href="{disapproval_url}"  style="color: red;">DISAPPROVE</a> / <a href="{po_form_link}"  style="color: blue;">ODOO PO FORM
-                </a> / <a href="{approval_list_view_url}">ODOO APPROVAL DASHBOARD</a></span>
+            </body>
+            <br></br>
+            <br></br>
+            <br></br>
+            <span style="font-style: italic;";><a href="{approval_url}"  style="color: green;">APPROVE</a> / <a href="{disapproval_url}"  style="color: red;">DISAPPROVE</a> / <a href="{po_form_link}"  style="color: blue;">ODOO PO FORM
+            </a> / <a href="{approval_list_view_url}">ODOO APPROVAL DASHBOARD</a></span>
 
-                </html>
-            """
+            </html>
+        """
 
         msg.attach(MIMEText(html_content, 'html'))
 
@@ -319,3 +317,113 @@ class ChangeApproversWiz(models.TransientModel):
                     'title': 'Error: Unable to send email!',
                     'message': f'{msg}'}
             }
+    def compute_approver(self):
+        for rec in self:
+            if self.env.user.name == rec.approver_id.name:
+                self.update({
+                    'is_approver': True,
+                })
+            else:
+                self.update({
+                    'is_approver': False,
+                })
+
+    def getCurrentDate(self):
+        date_now = datetime.datetime.now()
+        formatted_date = date_now.strftime("%m/%d/%Y")
+
+        self.date_today = formatted_date
+
+        if self.initial_approver_name:
+            self.initial_approval_date = formatted_date
+
+        if self.initial_approver_name:
+            self.initial_approval_date = formatted_date
+
+        if hasattr(self, 'second_approver_name') and self.second_approver_name:
+            self.second_approval_date = formatted_date
+
+        if hasattr(self, 'third_approver_name') and self.third_approver_name:
+            self.third_approval_date = formatted_date
+
+        if hasattr(self, 'fourth_approver_name') and self.fourth_approver_name:
+            self.fourth_approval_date = formatted_date
+
+        if hasattr(self, 'final_approver_name') and self.final_approver_name:
+            self.final_approval_date = formatted_date
+
+    @api.depends('approval_stage')
+    def po_approve_request(self):
+        for rec in self:
+            res = self.env["department.approvers"].search(
+                [("dept_name", "=", rec.department_id.id), ("approval_type.name", '=', 'Purchase Orders')])
+
+            if rec.approver_id and rec.approval_stage < res.no_of_approvers:
+                if rec.approval_stage == 1:
+
+                    if self.initial_approver_name is None:
+                        raise UserError('No approver set')
+                    else:
+                        self.initial_approver_name = rec.approver_id.name
+
+                    approver_dept = [x.second_approver.id for x in res.set_second_approvers]
+
+                    self.write({
+                        'approver_id': approver_dept[0]
+                    })
+
+                    self.submit_to_next_approver()
+                    self.getCurrentDate()
+
+                if rec.approval_stage == 2:
+                    if self.second_approver_name is None:
+                        raise UserError('No approver set')
+                    else:
+                        self.second_approver_name = rec.approver_id.name
+                    approver_dept = [x.third_approver.id for x in res.set_third_approvers]
+
+                    self.write({
+                        'approver_id': approver_dept[0]
+                    })
+
+                    self.submit_to_next_approver()
+                    self.getCurrentDate()
+
+                if rec.approval_stage == 3:
+                    if self.third_approver_name is None:
+                        raise UserError('No approver set')
+                    else:
+                        self.third_approver_name = rec.approver_id.name
+
+                    approver_dept = [x.fourth_approver.id for x in res.set_fourth_approvers]
+
+                    self.write({
+                        'approver_id': approver_dept[0]
+                    })
+
+                    self.submit_to_next_approver()
+                    self.getCurrentDate()
+
+                if rec.approval_stage == 4:
+                    if self.fourth_approver_name is None:
+                        raise UserError('No approver set')
+                    else:
+                        self.fourth_approver_name = rec.approver_id.name
+
+                    approver_dept = [x.fifth_approver.id for x in res.set_fifth_approvers]
+
+                    self.write({
+                        'approver_id': approver_dept[0]
+                    })
+
+                    self.submit_to_next_approver()
+                    self.getCurrentDate()
+
+                rec.approval_stage += 1
+            else:
+                self.write({
+                    'state': 'approved',
+                    'approval_status': 'approved',
+                    'final_approver_name': rec.approver_id.name,
+                })
+                self.getCurrentDate()

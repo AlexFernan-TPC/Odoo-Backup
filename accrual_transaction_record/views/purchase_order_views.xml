@@ -41,11 +41,11 @@
             <field name="arch" type="xml">
 
                 <xpath expr="//field[@name='currency_id']" position="after">
-                    <field name="to_mui_cip" string="Transact to MUI/CIP"  attrs="{'readonly': [('state', 'in', ['approved', 'dissapprove'])]}"/>
+                    <field name="to_mui_cip" string="Transact to MUI/CIP"/>
                 </xpath>
 
                 <xpath expr="//field[@name='company_id']" position="after">
-                    <field name="journal_id" attrs="{'readonly': [('state', 'in', ['approved', 'dissapprove'])]}"/>
+                    <field name="journal_id"/>
                 </xpath>
 
             </field>

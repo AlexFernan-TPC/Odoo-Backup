@@ -78,6 +78,15 @@ class PurchaseOrder(models.Model):
     #     print(partner_names)
     #     return partner_names
 
+    # def get_partner_names(self):
+    #     partner_id = self['partner_id']
+    #     if partner_id:
+    #         partner = self.env['res.partner'].browse(partner_id.name)
+    #         print(partner)
+    #     else:
+    #         print("Partner ID is not set or invalid")
+
+
     @api.depends('approval_status', 'state')
     def get_approvers_email(self):
         """
