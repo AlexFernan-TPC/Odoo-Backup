@@ -45,7 +45,7 @@
                 </xpath>
 
                 <xpath expr="//field[@name='company_id']" position="after">
-                    <field name="journal_id" attrs="{'readonly': [('state', 'in', ['approved', 'disapprove'])]}"/>
+                    <field name="journal_id"/>
                 </xpath>
 
             </field>

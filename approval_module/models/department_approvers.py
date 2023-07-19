@@ -15,6 +15,7 @@ class DepartmentApprovers(models.Model):
     set_fifth_approvers = fields.One2many('department.approvers.line', 'fifth_approvers_id')
 
 
+
 class DepartmentApproversLine(models.Model):
     _name = "department.approvers.line"
 
@@ -36,7 +37,6 @@ class DepartmentApproversLine(models.Model):
         ('third', 'Third Approver'),
         ('fourth', 'Fourth Approver'),
         ('fifth', 'Fifth Approver')])
-
 
     @api.onchange('first_approver', 'second_approver', 'third_approver', 'fourth_approver', 'fifth_approver', )
     def get_approver_email(self):

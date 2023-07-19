@@ -19,7 +19,7 @@ are agreements you have with vendors to benefit from a predetermined pricing.
         'data/purchase_requisition_data.xml',
         'views/product_views.xml',
         'views/purchase_views.xml',
-        'views/purchase_requisition_views.xml',
+        'views/purchase_requisition_view.xml',
         'views/res_config_settings_views.xml',
         'report/purchase_requisition_report.xml',
         'report/report_purchaserequisition.xml',

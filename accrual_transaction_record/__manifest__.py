@@ -26,7 +26,7 @@
         'views/res_partner_view.xml',
         'views/buyoff_result_view.xml',
         'views/purchase_order_views.xml',
-        'views/purchase_requisition_views.xml',
+        'views/purchase_requisition_view.xml',
         'views/account_asset_category_views.xml',
         'views/product_template_views.xml',
         'views/package_type_views.xml',

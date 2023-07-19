@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     'name': "approval_module_extension",
+    'sequence': 0,
 
     'summary': """
         Short (1 phrase/line) summary of the module's purpose, used as
@@ -26,8 +27,9 @@
     # always loaded
     'data': [
         # 'security/ir.model.access.csv',
-        'views/purchase_requisition_views.xml',
-        'views/templates.xml',
+        'views/purchase_requisition_view.xml',
+        'views/purchase_order_view.xml',
+
     ],
     # only loaded in demonstration mode
     'demo': [
