@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <record id="purchase_requisition_view_form_inherit" model="ir.ui.view">
+        <field name="name">purchase_requisition_view_form_inherit</field>
+        <field name="model">purchase.requisition</field>
+        <field name="inherit_id" ref="purchase_requisition.view_purchase_requisition_form"/>
+        <field name="arch" type="xml">
+
+            <xpath expr="//field[@name='price_unit']" position="after">
+                <field name="subtotal"/>
+            </xpath>
+
+            <xpath expr="//field[@name='description']" position="before">
+                <group class="oe_subtotal_footer oe_right">
+                    <field name="amount_total" string="Total" widget="monetary"
+                           options="{'currency_field': 'currency_id'}"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+</odoo>

@@ -2,7 +2,6 @@
 {
 
     'name': "Approvals",
-    'sequence': 1,
 
     'summary': """
         Approvals
@@ -26,7 +25,7 @@
         'wizard/disapprove_reason_views.xml',
         'wizard/disapprove_pr_reason_views.xml',
         'views/css_styles.xml',
-        'views/purchase_requisition_views.xml',
+        'views/purchase_requisition_view.xml',
         'views/purchase_order_views.xml',
         'views/approval_types_views.xml',
         'views/department_approvers_views.xml',
@@ -36,5 +35,4 @@
 
     ],
     'license': 'LGPL-3',
-
 }

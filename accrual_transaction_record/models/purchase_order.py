@@ -250,3 +250,8 @@ class PurchaseOrderLine(models.Model):
     initial_quantity_reversed = fields.Float()
     partial_subtotal = fields.Float()
     new_move_ids = fields.One2many('stock.move', 'purchase_line_id_new', readonly=True, ondelete='set null', copy=False)
+
+
+
+
+
