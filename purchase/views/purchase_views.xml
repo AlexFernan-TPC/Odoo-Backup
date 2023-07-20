@@ -191,7 +191,8 @@
                         <group>
                            <field name="date_order" attrs="{'readonly': [('state', 'in', ['approved', 'disapproved'])], 'invisible': [('state', 'in', ['purchase', 'done'])]}"/>
                             <field name="date_approve" attrs="{'invisible': [('state','not in',('purchase','done'))]}"/>
-                            <field name="origin" attrs="{'invisible': [('origin','=',False)]}"/>
+                                          <field name="origin" attrs="{'invisible': [('origin','=',False)], 'readonly': [('state', 'in', ('approved', 'disapproved'))]}" />
+
                             <field name="company_id" groups="base.group_multi_company" options="{'no_create': True}"/>
                         </group>
                         <field name="calculate_all" invisible="1"/>
@@ -204,7 +205,7 @@
                                    widget="section_and_note_one2many"
                                    mode="tree,kanban"
                                    context="{'default_state': 'draft'}"
-                                   attrs="{'readonly': [('state', 'in', ('done', 'cancel', 'approved', 'disapprove'))]}">
+                                    attrs="{'readonly': [('state', 'in', ('done', 'cancel'))]}">
                                 <tree string="Purchase Order Lines" editable="bottom">
                                     <control>
                                         <create name="add_product_control" string="Add a product"/>
@@ -413,14 +414,15 @@
                                     </div>
                                 </group>
                                 <group name="other_info">
-                                    <field name="user_id"/>
+<!--                                    <field name="user_id"/>-->
+                                    <field name="user_id"  attrs="{'readonly' : [('state', 'in', ('approved', 'disapprove'))]}"/>
                                     <field name="invoice_status"
                                            attrs="{'invisible': [('state', 'in', ('draft', 'sent', 'to approve', 'cancel'))]}"/>
                                     <field name="payment_term_id"
-                                           attrs="{'readonly': ['|', ('invoice_status','=', 'invoiced'), ('state', '=', 'done')]}"
+                                           attrs="{'readonly': ['|', ('invoice_status','=', 'invoiced'), ('state', 'in', ('done', 'approved', 'disapprove'))]}"
                                            options="{'no_create': True}"/>
                                     <field name="fiscal_position_id" options="{'no_create': True}"
-                                           attrs="{'readonly': ['|', ('invoice_status','=', 'invoiced'), ('state', '=', 'done')]}"/>
+                                           attrs="{'readonly': ['|', ('invoice_status','=', 'invoiced'), ('state', 'in', ('done', 'approved', 'disapprove'))]}"/>
                                 </group>
                             </group>
                         </page>
