@@ -119,9 +119,9 @@
                     </header>
                 </xpath>
 
-
                 <xpath expr="//field[@name='partner_id']" position="before">
-                    <field name="user_id" string="Purchase Representative" attrs="{'readonly': [('state', 'in', ('approved', 'disapprove'))]}"/>
+<!--                    <field name="user_id" string="Purchase Representative"/>-->
+                    <field name="user_id" string="Purchase Representative" attrs="{'readonly' : [('state', 'in', ('approved', 'disapprove'))]}" />
                 </xpath>
 
                 <xpath expr="//field[@name='company_id']" position="after">

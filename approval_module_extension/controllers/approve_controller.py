@@ -18,7 +18,6 @@ class RequestApprovalController(http.Controller):
             return INVALID_LINK
 
 
-
     @http.route('/purchase_requisition/request/disapprove/<string:token>', type='http', auth='public', website=True,
                 csrf=False,
                 method=['GET', 'POST'])

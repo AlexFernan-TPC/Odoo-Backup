@@ -211,12 +211,19 @@ class PurchaseRequisition(models.Model):
     # this check the status based on approval status and state.
     @api.depends('approval_status', 'state')
     def compute_check_status(self):
-        if self.approval_status == 'approved' or self.state == 'approved':
-            self.get_approvers_email()
-            self.submit_to_final_approver()
-        elif self.approval_status == 'disapprove' or self.state == 'disapprove':
-            self.get_approvers_email()
-            self.submit_for_disapproval()
+        """
+        When installing approval_module_extension in this method compute_check_status comment out the for loop first.
+        So it prevents automatically sending of email to already approved or disapproved PR/PO.
+        After successfully installing the module. You can now uncomment the for loop and Upgrade the module.
+        """
+        print('Testing')
+        for rec in self:
+            if rec.approval_status == 'approved' or rec.state == 'approved':
+                rec.get_approvers_email()
+                rec.submit_to_final_approver()
+            elif rec.approval_status == 'disapprove' or rec.state == 'disapprove':
+                rec.get_approvers_email()
+                rec.submit_for_disapproval()
 
     def update_check_status(self):
         self.check_status = False
