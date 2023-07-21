@@ -319,11 +319,6 @@ class PurchaseRequisition(models.Model):
             'show_submit_request': False
         })
 
-        action = {
-            'type': 'ir.actions.client',
-            'tag': 'reload',
-        }
-        return action
 
     def sendingEmail(self, fetch_getEmailReceiver, pr_form_link, approval_list_view_url):
         sender = 'noreply@teamglac.com'
