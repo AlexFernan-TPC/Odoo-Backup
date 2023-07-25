@@ -2,26 +2,26 @@
 <odoo>
     <data>
         <!-- This Menu Item must have a parent and an action -->
-<!--        <menuitem id="team_account_move_line_menu" name="P &amp; L per analytic account" parent="account.menu_finance_entries_accounting_miscellaneous" action="team_accounting.account_move_line_id_action" sequence="0"/>-->
+ <menuitem id="team_account_move_line_menu" name="P &amp; L per analytic account" parent="account.menu_finance_entries_accounting_miscellaneous" action="team_accounting.account_move_line_id_action" sequence="0"/>
 
         <!-- This Menu Item Must have a parent -->
         <!-- This Menu Item Must have a parent -->
-        <!-- <menuitem id="team_accounting_menu" name="P &amp; L per analytic account" parent="account.menu_finance_entries_accounting_miscellaneous" sequence=""/>
+         <menuitem id="team_accounting_menu" name="P &amp; L per analytic account" parent="account.menu_finance_entries_accounting_miscellaneous" sequence=""/>
 
         <record id="action_bank_book_1" model="ir.actions.client">
                     <field name="name">P &amp; L</field>
                     <field name="tag">g_l</field>
         </record> -->
-<!--        <menuitem id="menu_bank_book"  action="action_bank_book_1"-->
-<!--              name="Profit and Loss (Per SBU)" sequence="3" parent="team_accounting_menu"/>-->
+        <menuitem id="menu_bank_book"  action="action_bank_book_1"
+              name="Profit and Loss (Per SBU)" sequence="3" parent="team_accounting_menu"/>
 
-        <!-- <record id="action_sale_demo" model="ir.actions.client">
+         <record id="action_sale_demo" model="ir.actions.client">
                <field name="name">P &amp; L </field>
                <field name="tag">sale_cust</field>
                <field name="target">new</field>
         </record>
            <menuitem id="menu_testing"  action="action_sale_demo"
-             name="P and L" parent="team_accounting_menu"/> -->
+             name="P and L" parent="team_accounting_menu"/>
 
 
     </data>

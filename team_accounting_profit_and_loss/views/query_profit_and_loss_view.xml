@@ -46,30 +46,48 @@
         </record>
 
         <!--                         Pivot View-->
+<!--        <record id="view_pivot" model="ir.ui.view">-->
+<!--            <field name="name">Pivot Profit and loss</field>-->
+<!--            <field name="model">get.data.here</field>-->
+<!--            <field name="arch" type="xml">-->
+<!--                <pivot string="Pivot View">-->
+<!--                    <field name="profit_and_loss_root" type="row"/>-->
+<!--                    &lt;!&ndash;                    <field name="sub_category" type="row"/>&ndash;&gt;-->
+
+<!--                    <field name="main_category" type="row"/>-->
+<!--                    <field name="account_id" type="row"/>-->
+<!--                    &lt;!&ndash;                                        <field name="total_sales" type="row"/>&ndash;&gt;-->
+<!--                    &lt;!&ndash;                                        <field name="root" type="row"/>&ndash;&gt;-->
+<!--                    <field name="monthly" type="col" interval="day"/>-->
+<!--                    &lt;!&ndash;                    <field name="monthly" type="col" interval="month"/>&ndash;&gt;-->
+<!--                </pivot>-->
+<!--            </field>-->
+<!--        </record>-->
+
+
         <record id="view_pivot" model="ir.ui.view">
             <field name="name">Pivot Profit and loss</field>
             <field name="model">get.data.here</field>
             <field name="arch" type="xml">
                 <pivot string="Pivot View">
+                    <field name="total_sales"  type="row" invisible="1"/>
+<!--                    <field name="gross_profit_label" type="row"/>-->
+<!--                    <field name="gross_profit"  type="row"/>-->
                     <field name="profit_and_loss_root" type="row"/>
                     <field name="main_category" type="row"/>
                     <field name="account_id" type="row"/>
-                    <!--                    <field name="root" type="row"/>-->
-                    <!--                    <field name="sub_category" type="row"/>-->
-                    <field name="monthly" type="col" interval="day"/>
-                    <!--                    <field name="monthly" type="col" interval="month"/>-->
+                    <field name="monthly" type="col" interval="month"/>
                 </pivot>
             </field>
         </record>
 
-        <record id="view_filter" model="ir.ui.view">
+
+        <record id="view_filter_pnl" model="ir.ui.view">
             <field name="name">Filter Profit and Loss</field>
-            <field name="model">get.data.here</field>
+            <field name="model">balance.sheet</field>
             <field name="arch" type="xml">
                 <search>
                     <filter string="Date" name="date" date="date"/>
-                    <!--                    <filter string="Quarterly" name="quarter" context="{'group_by': 'quarter'}"/>-->
-                    <!--                    <filter string="Analytic Account" name="grouped_analytic_account" context="{'group_by': 'grouped_analytic_account'}"/>-->
                 </search>
             </field>
         </record>

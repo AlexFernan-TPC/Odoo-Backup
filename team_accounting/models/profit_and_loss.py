@@ -10,8 +10,11 @@ class ProfitAndLoss(models.Model):
     name = fields.Char(string='Name', required=True)
     pnl_line_connection = fields.One2many('profit.and.loss.line', 'pnl_connection', store=True)
     connection_categ = fields.Many2one('category', string='Category')
+
     sub_category = fields.Many2one('sub.categ', string='Sub Category',
                                    domain="[('connection_categ', '=', connection_categ)]", default=0)
+
+
     is_pnl_or_bs = fields.Selection([
         ('pnl', 'Profit and loss',),
         ('bs', 'Balance Sheet')], string='Profit and Loss or Balance Sheet', related='connection_categ.is_pnl_or_bs',
