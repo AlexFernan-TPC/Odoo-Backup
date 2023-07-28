@@ -7,8 +7,10 @@ from odoo.addons.web.controllers.main import _serialize_exception
 from odoo.http import content_disposition, request
 from odoo.tools import html_escape
 
+from odoo.http import request
 
 class TBXLSXReportController(http.Controller):
+
     @http.route('/dynamic_xlsx_reports', type='http', auth='user', methods=['POST'], csrf=False)
     def get_report_xlsx(self, model, options, output_format, token, report_data, report_name, dfr_data, **kw):
 
@@ -36,3 +38,9 @@ class TBXLSXReportController(http.Controller):
                 'data': se
             }
             return request.make_response(html_escape(json.dumps(error)))
+
+
+class CustomController(http.Controller):
+    @http.route('/custom_page', type='http', auth='public', website=True)
+    def custom_page(self):
+        return http.request.render('team_accounting_profit_and_loss.blank_page_template', {})

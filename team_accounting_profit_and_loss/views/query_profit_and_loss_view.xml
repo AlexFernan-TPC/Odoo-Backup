@@ -37,61 +37,93 @@
                     <field name="account_id"/>
                     <field name="analytic_account_id"/>
                     <field name="grouped_analytic_account"/>
+
                     <field name="monthly"/>
                     <!--                            <field name="debit"/>-->
                     <!--                            <field name="credit"/>-->
                     <field name="balance"/>
+
                 </tree>
             </field>
         </record>
 
         <!--                         Pivot View-->
-<!--        <record id="view_pivot" model="ir.ui.view">-->
-<!--            <field name="name">Pivot Profit and loss</field>-->
-<!--            <field name="model">get.data.here</field>-->
-<!--            <field name="arch" type="xml">-->
-<!--                <pivot string="Pivot View">-->
-<!--                    <field name="profit_and_loss_root" type="row"/>-->
-<!--                    &lt;!&ndash;                    <field name="sub_category" type="row"/>&ndash;&gt;-->
-
-<!--                    <field name="main_category" type="row"/>-->
-<!--                    <field name="account_id" type="row"/>-->
-<!--                    &lt;!&ndash;                                        <field name="total_sales" type="row"/>&ndash;&gt;-->
-<!--                    &lt;!&ndash;                                        <field name="root" type="row"/>&ndash;&gt;-->
-<!--                    <field name="monthly" type="col" interval="day"/>-->
-<!--                    &lt;!&ndash;                    <field name="monthly" type="col" interval="month"/>&ndash;&gt;-->
-<!--                </pivot>-->
-<!--            </field>-->
-<!--        </record>-->
-
-
         <record id="view_pivot" model="ir.ui.view">
             <field name="name">Pivot Profit and loss</field>
             <field name="model">get.data.here</field>
             <field name="arch" type="xml">
                 <pivot string="Pivot View">
-                    <field name="total_sales"  type="row" invisible="1"/>
-<!--                    <field name="gross_profit_label" type="row"/>-->
-<!--                    <field name="gross_profit"  type="row"/>-->
+
                     <field name="profit_and_loss_root" type="row"/>
                     <field name="main_category" type="row"/>
                     <field name="account_id" type="row"/>
                     <field name="monthly" type="col" interval="month"/>
+
                 </pivot>
+
             </field>
         </record>
-
 
         <record id="view_filter_pnl" model="ir.ui.view">
             <field name="name">Filter Profit and Loss</field>
-            <field name="model">balance.sheet</field>
+            <field name="model">get.data.here</field>
             <field name="arch" type="xml">
                 <search>
+<!--                    <group string="Group By">-->
+<!--                         <filter name="main_category" string="Gross Profit" context="{'group_by': 'gross_profit'}"/>-->
+<!--                    </group>-->
+<!--                    <separator/>-->
+
                     <filter string="Date" name="date" date="date"/>
+                    <separator/>
+
+                    <filter string="Sales" name="main_category" domain="[('root', '=', 'SALES')]"/>
+                    <separator/>
+
+                    <filter string="Raw Materials Used" name="main_category" domain="[('root', '=', 'RAW MATERIALS USED')]"/>
+                    <separator/>
+
+                    <filter string="Direct Labor Cost" name="main_category" domain="[('root', 'in', ['DIRECT LABOR - BASIC', 'DL INDIRECT COST'])]"/>
+                    <separator/>
+
+                    <filter string="Direct Labor - Basic" name="main_category" domain="[('root', '=', 'DIRECT LABOR - BASIC')]"/>
+                    <separator/>
+
+                    <filter string="DL Indirect Cost" name="main_category" domain="[('root', '=', 'DL INDIRECT COST')]"/>
+                    <separator/>
+
+                    <filter string="Manufacturing Overhead" name="main_category" domain="[('root', '=', 'MANUFACTURING OVERHEAD')]"/>
+                    <separator/>
+
+                    <filter string="TOTAL COST OF GOOD SOLD" name="main_category" domain="[('root', 'in', ['DIRECT LABOR - BASIC', 'DL INDIRECT COST', 'RAW MATERIALS USED', 'MANUFACTURING OVERHEAD'])]"/>
+                    <separator/>
+
+                    <filter string="GROSS PROFIT" name="main_category" domain="[('root', 'in', ['SALES','DIRECT LABOR - BASIC', 'DL INDIRECT COST', 'RAW MATERIALS USED', 'MANUFACTURING OVERHEAD'])]"/>
+                    <separator/>
+
+<!--                (SUM(CASE WHEN AML.root = 'SALES' THEN AML.balance ELSE 0 END) OVER() - SUM(CASE WHEN AML.root IN ('RAW MATERIALS USED', 'DIRECT LABOR - BASIC', 'DL INDIRECT COST', 'MANUFACTURING OVERHEAD') THEN AML.balance ELSE 0 END) OVER()) AS gross_profit,-->
+
+                    <filter string="INCOME (LOSS) FROM OPERATIONS" name="main_category" domain="[('root', '=', 'SELLING, GENERAL AND ADMINISTRATIVE EXPENSES')]"/>
+                    <separator/>
+
+<!--                    <filter string="Other (Income) and Expenses" name="main_category" domain="[('root', '=', 'OTHER (INCOME) AND EXPENSES')]"/>-->
+<!--                    <separator/>-->
+                    <filter string="OTHER (INCOME) AND EXPENSES" name="main_category" domain="[('root', '=', 'OTHER (INCOME) AND EXPENSES')]"/>
+                    <separator/>
+
+                    <filter string="Income Tax" name="main_category" domain="[('root', '=', 'BENEFIT FROM (PROVISION FOR)')]"/>
+                    <separator/>
+
+<!--                    <filter string="Depreciation and Amortization" name="account_name" domain="['|', ('account_name', '=', 2709), ('root', '=', 'SELLING, GENERAL AND ADMINISTRATIVE EXPENSES')]"/>-->
+<!--                    <separator/>-->
+
+<!--                              <field name="partner_id"-->
+<!--                                   domain="['|', ('parent_id', '=', False), ('is_company', '=', True)]"-->
+<!--                                   readonly="1"/>-->
                 </search>
+
             </field>
         </record>
-
 
     </data>
 </odoo>

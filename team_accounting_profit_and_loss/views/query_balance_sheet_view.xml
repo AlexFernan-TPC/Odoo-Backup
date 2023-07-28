@@ -36,14 +36,14 @@
                     <field name="analytic_account_id"/>
                     <field name="grouped_analytic_account"/>
                     <field name="date"/>
-                    <!--                            <field name="debit"/>-->
-                    <!--                            <field name="credit"/>-->
+                    <field name="debit"/>
+                    <field name="credit"/>
                     <field name="balance"/>
                 </tree>
             </field>
         </record>
 
-
+<!--    Pivot View-->
         <record id="view_balance_sheet_pivot" model="ir.ui.view">
             <field name="name">Pivot Balance Sheet</field>
             <field name="model">balance.sheet</field>
@@ -54,17 +54,68 @@
                     <field name="main_category" type="row"/>
                     <field name="account_id" type="row"/>
                     <!--                    <field name="sub_category" type="row"/>-->
-                    <field name="monthly" type="col" interval="day"/>
+                    <field name="yearly" type="col" interval="year"/>
                 </pivot>
             </field>
         </record>
 
         <record id="view_filter_bs" model="ir.ui.view">
             <field name="name">Filter Balance Sheet</field>
-            <field name="model">get.data.here</field>
+            <field name="model">balance.sheet</field>
             <field name="arch" type="xml">
                 <search>
                     <filter string="Date" name="date" date="date"/>
+                    <separator/>
+
+                    <!--START OF ASSETS -->
+<!--                    <filter string="Cash &amp; Cash Equivalent" name="main_category" domain="[('root', '=', 'CASH &amp; CASH EQUIVALENT')]"/>-->
+<!--                    <separator/>-->
+
+                    <filter string="Total Current Assets" name="main_category"
+                            domain="[('root', 'in', ['CASH &amp; CASH EQUIVALENT', 'RECEIVABLE - TRADE', 'RECEIVABLE - OTHERS', 'RECEIVABLE - OTHERS', 'INVENTORIES', 'OTHER CURRENT ASSETS'])]"/>
+                    <!--END OF ASSETS -->
+
+                    <!--START OF NON-CURRENT ASSETS -->
+                    <filter string="Total Non-Current Assets" name="main_category"
+                            domain="[('root', 'in', ['PROPERTY, PLANT AND EQUIPMENT-NET', 'DEFERRED TAX ASSETS', 'OTHERS ASSETS - NET', 'DUE FROM AFF COs'])]"/>
+                    <!--END OF NON-CURRENT ASSETS -->
+
+                    <!--START OF TOTAL ASSETS-->
+                     <filter string="TOTAL ASSETS" name="main_category"
+                            domain="[('root', 'in', ['CASH &amp; CASH EQUIVALENT', 'RECEIVABLE - TRADE', 'RECEIVABLE - OTHERS', 'RECEIVABLE - OTHERS', 'INVENTORIES', 'OTHER CURRENT ASSETS', 'PROPERTY, PLANT AND EQUIPMENT-NET', 'DEFERRED TAX ASSETS', 'OTHERS ASSETS - NET', 'DUE FROM AFF COs'])]"/>
+                    <separator/>
+                    <!--START OF TOTAL ASSETS -->
+
+                    <!--START OF LIABILITIES AND EQUITY -->
+                    <filter string="Total Current Liabilities" name="main_category"
+                            domain="[('root', 'in', ['ACCOUNTS AND OTHER PAYABLES', 'INCOME TAX PAYABLE', 'DEFERRED TAX LIABILITY ON REVALUATION SURPLUS ON PPE', 'PENSION LIABILITIES','CURRENT PORTION OF LONG-TERM DEBT', 'DEFERRED INTEREST INCOME', 'PAYABLE TO PARENT COMPANY' ])]"/>
+                    <!--END OF LIABILITIES AND EQUITY -->
+
+                    <!--START OF NON-CURRENT LIABILITIES -->
+                    <filter string="Total Non-Current Liabilities" name="main_category"
+                            domain="[('root', 'in', ['LONG-TERM DEBT - NET OF CURRENT PORTION', 'ACCRUED INTEREST'])]"/>
+                    <!--END OF NON-CURRENT LIABILITIES -->
+
+                    <!--START OF TOTAL LIABILITIES -->
+                    <filter string="TOTAL LIABILITIES" name="main_category"
+                            domain="[('root', 'in', ['ACCOUNTS AND OTHER PAYABLES', 'INCOME TAX PAYABLE', 'DEFERRED TAX LIABILITY ON REVALUATION SURPLUS ON PPE', 'PENSION LIABILITIES','CURRENT PORTION OF LONG-TERM DEBT', 'DEFERRED INTEREST INCOME', 'PAYABLE TO PARENT COMPANY', 'LONG-TERM DEBT - NET OF CURRENT PORTION', 'ACCRUED INTEREST'])]"/>
+                    <separator/>
+                    <!--END OF NON-CURRENT LIABILITIES -->
+
+                    <!--START OF CAPITAL -->
+                    <filter string="Capital" name="main_category"
+                            domain="[('root', 'in', ['COMMON STOCK', 'ADDITIONAL PAID-IN CAPITAL', 'DEFICIT', 'REVALUATION SURPLUS ON PPE','ACCUMULATED ACTUARIAL GAINS (LOSS)'])]"/>
+                    <separator/>
+                    <!--END OF CAPITAL -->
+
+                    <!--START OF TOTAL LIABILITIES NET OF CAPITAL DEFICIENCY -->
+                    <filter string="TOTAL LIABILITIES NET OF CAPITAL DEFICIENCY" name="main_category"
+                            domain="[('root', 'in', ['ACCOUNTS AND OTHER PAYABLES', 'INCOME TAX PAYABLE', 'DEFERRED TAX LIABILITY ON REVALUATION SURPLUS ON PPE', 'PENSION LIABILITIES','CURRENT PORTION OF LONG-TERM DEBT', 'DEFERRED INTEREST INCOME', 'PAYABLE TO PARENT COMPANY', 'LONG-TERM DEBT - NET OF CURRENT PORTION', 'ACCRUED INTEREST', 'COMMON STOCK', 'ADDITIONAL PAID-IN CAPITAL', 'DEFICIT', 'REVALUATION SURPLUS ON PPE','ACCUMULATED ACTUARIAL GAINS (LOSS)'])]"/>
+                    <separator/>
+                    <!--END OF TOTAL LIABILITIES NET OF CAPITAL DEFICIENCY -->
+
+
+
                 </search>
             </field>
         </record>

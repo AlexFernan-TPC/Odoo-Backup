@@ -29,6 +29,8 @@
         'views/profit_and_loss_view_view.xml',
         'views/category_and_sub_categ_view.xml',
         'views/profit_and_loss_config_view.xml',
+        'views/blank_page_template.xml',
+
 
         # Reports
         'reports/profit_and_loss_report_and_bs.xml',

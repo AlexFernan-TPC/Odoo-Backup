@@ -21,15 +21,40 @@ class GetDataHere(models.Model):
     profit_and_loss_root = fields.Char(string='ID & Category')
 
     quarter = fields.Char(string='Quarterly')
+    account_name = fields.Char()
+    # total_direct_labor_cost = fields.Monetary(string='Direct Labor Cost')
+    # total_manufacturing_overhead = fields.Monetary(string='Manufacturing Overhead')
+    # total_cost_of_goods_sold = fields.Monetary(string='Cost of Goods Sold')
+    # gross_profit = fields.Monetary(string='Gross Profit')
+    # total_income_loss_from_operations = fields.Monetary(string='Income (Loss) From Operations')
+    # total_other_income_and_expenses = fields.Monetary(string='Other (Income) and Expenses')
+    # total_income_loss_before_income_tax = fields.Monetary(string='Income (Loss) Before Income Tax')
+    # total_income_tax = fields.Monetary(string='Income Tax')
+    # total_net_loss_income = fields.Monetary(string='Net (Loss) Income')
+    # total_depreciation_and_amortization = fields.Monetary(string='Depreciation and Amortization')
+    gross_profit = fields.Monetary(string='Gross Profit', compute='_compute_gross_profit', store=True)
 
-    total_sales = fields.Monetary()
-    gross_profit = fields.Monetary()
-    total_raw_materials_used = fields.Monetary(string="Raw Materials Used")
+    @api.depends('root', 'balance', 'sub_category', 'account_id', 'main_category', 'date',
+                 'monthly', 'yearly', 'grouped_analytic_account', 'analytic_account_id',
+                 'pnl_id', 'profit_and_loss_root', 'quarter', 'account_name')
+    def _compute_gross_profit(self):
+        for record in self:
+            # Step 2: Compute gross profit using the given formula
+            sales_balance = 0
+            cost_of_goods_sold = 0
 
+            for line in self:
+                if line.root == 'SALES':
+                    sales_balance += line.balance
+                elif line.root in ('RAW MATERIALS USED', 'DIRECT LABOR - BASIC', 'DL INDIRECT COST', 'MANUFACTURING OVERHEAD'):
+                    cost_of_goods_sold += line.balance
 
+            gross_profit = sales_balance - cost_of_goods_sold
+            record.gross_profit = gross_profit
 
 
     def init(self):
+
         tools.drop_view_if_exists(self._cr, 'get_data_here')
         self._cr.execute("""
             CREATE OR REPLACE VIEW get_data_here AS (
@@ -63,16 +88,12 @@ SELECT
         WHEN EXTRACT(MONTH FROM TO_DATE(AML.date, 'YYYY-MM-DD')) IN (7, 8, 9) THEN 'Q3'
         ELSE 'Q4'
     END AS quarter,
-    SUM(CASE WHEN AML.root = 'SALES' THEN AML.balance ELSE 0 END) OVER() AS total_sales,
-    SUM(CASE WHEN AML.root = 'RAW MATERIALS USED' THEN AML.balance ELSE 0 END) OVER() AS total_raw_materials_used,
-    (SUM(CASE WHEN AML.root = 'DIRECT LABOR - BASIC' THEN AML.balance ELSE 0 END) OVER() + SUM(CASE WHEN AML.root = 'DL INDIRECT COST' THEN AML.balance ELSE 0 END) OVER()) AS total_direct_labor_cost,
-    SUM(CASE WHEN AML.root = 'DIRECT LABOR - BASIC' THEN AML.balance ELSE 0 END) OVER() AS total_direct_labor_basic,
-    SUM(CASE WHEN AML.root = 'DL INDIRECT COST' THEN AML.balance ELSE 0 END) OVER() AS total_dl_indirect_cost,
+	(SUM(CASE WHEN AML.root = 'DIRECT LABOR - BASIC' THEN AML.balance ELSE 0 END) OVER() + SUM(CASE WHEN AML.root = 'DL INDIRECT COST' THEN AML.balance ELSE 0 END) OVER()) AS total_direct_labor_cost,
     SUM(CASE WHEN AML.root = 'MANUFACTURING OVERHEAD' THEN AML.balance ELSE 0 END) OVER() AS total_manufacturing_overhead,
     SUM(CASE WHEN AML.root IN ('RAW MATERIALS USED', 'DIRECT LABOR - BASIC', 'DL INDIRECT COST', 'MANUFACTURING OVERHEAD') THEN AML.balance ELSE 0 END) OVER() AS total_cost_of_goods_sold,
+	(SUM(CASE WHEN AML.root = 'SALES' THEN AML.balance ELSE 0 END) OVER() - SUM(CASE WHEN AML.root IN ('RAW MATERIALS USED', 'DIRECT LABOR - BASIC', 'DL INDIRECT COST', 'MANUFACTURING OVERHEAD') THEN AML.balance ELSE 0 END) OVER()) AS gross_profit,
     SUM(CASE WHEN AML.root = 'SELLING, GENERAL AND ADMINISTRATIVE EXPENSES' THEN AML.balance ELSE 0 END) OVER() AS total_income_loss_from_operations,
     SUM(CASE WHEN AML.root = 'OTHER (INCOME) AND EXPENSES' THEN AML.balance ELSE 0 END) OVER() AS total_other_income_and_expenses,
-    (SUM(CASE WHEN AML.root = 'SALES' THEN AML.balance ELSE 0 END) OVER() - SUM(CASE WHEN AML.root IN ('RAW MATERIALS USED', 'DIRECT LABOR - BASIC', 'DL INDIRECT COST', 'MANUFACTURING OVERHEAD') THEN AML.balance ELSE 0 END) OVER()) AS gross_profit,
     (SUM(CASE WHEN AML.root = 'SELLING, GENERAL AND ADMINISTRATIVE EXPENSES' THEN AML.balance ELSE 0 END) OVER() - SUM(CASE WHEN AML.root = 'OTHER (INCOME) AND EXPENSES' THEN AML.balance ELSE 0 END) OVER()) AS total_income_loss_before_income_tax,
     SUM(CASE WHEN acc.name = 'Income Tax' THEN AML.balance ELSE 0 END) OVER() AS total_income_tax,
     (SUM(CASE WHEN AML.root = 'SELLING, GENERAL AND ADMINISTRATIVE EXPENSES' THEN AML.balance ELSE 0 END) OVER() - SUM(CASE WHEN AML.root = 'OTHER (INCOME) AND EXPENSES' THEN AML.balance ELSE 0 END) OVER() - SUM(CASE WHEN acc.name = 'Income Tax' THEN AML.balance ELSE 0 END) OVER()) AS total_net_loss_income,

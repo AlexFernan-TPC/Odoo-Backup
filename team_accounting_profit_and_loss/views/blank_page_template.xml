@@ -1,0 +1,29 @@
+<odoo>
+    <template id="blank_page_template" name="Blank Page">
+        <t t-call="web.html_container">
+            <style type="text/css">
+
+                table {
+                font-size:15px;
+                }
+
+                h5{
+                height: 827px;
+                }
+                embed{
+                width: 100%;
+                height: 100%;
+                }
+            </style>
+            <t t-set="page_title">Blank Page</t>
+            <div class="container">
+                <h1>
+                    TEST
+                </h1>
+            </div>
+
+
+        </t>
+    </template>
+</odoo>
+
